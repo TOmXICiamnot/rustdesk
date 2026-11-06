@@ -1,0 +1,214 @@
+# KFT Suporte: build do cliente Windows x64 (portátil) a partir do RustDesk 1.5.1.
+# Cópia enxuta do job "build-for-windows-flutter" de flutter-build.yml (mesmas versões de
+# toolchain), sem assinatura, sem MSI e sem publicar Release: a saída é um artifact.
+# Disparo só manual. Ver NOTICE-KFT.md para a lista de modificações.
+name: KFT Suporte - Windows x64
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCITER_RUST_VERSION: "1.75"
+  LLVM_VERSION: "15.0.6"
+  FLUTTER_VERSION: "3.24.5"
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_COMMIT_ID: "9e593bb18ea69cc5095e012465dcd675a822ed0d"
+  VERSION: "1.5.1"
+  KFT_EXE: "KFT-Suporte-1.5.1.exe"
+  KFT_SERVER: "181.189.9.61"
+  KFT_KEY: "hyv2IFXrtmCIS1reUglt9KEcVZhPXVGj0V2EMCCQYOM="
+
+jobs:
+  generate-bridge:
+    uses: ./.github/workflows/bridge.yml
+
+  build-RustDeskTempTopMostWindow:
+    uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
+    with:
+      upload-artifact: true
+      target: windows-2022
+      configuration: Release
+      platform: x64
+      target_version: Windows10
+
+  build-kft-windows:
+    needs: [build-RustDeskTempTopMostWindow, generate-bridge]
+    runs-on: windows-2022
+    steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Checkout source code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      # O servidor público padrão do RustDesk fica no submódulo hbb_common. Trocamos pelo
+      # servidor KFT para que o app nunca caia no servidor da RustDesk, mesmo se a
+      # configuração embutida falhar. Qualquer falha aqui derruba o build.
+      - name: KFT - trocar servidor e chave padrão (hbb_common)
+        shell: bash
+        run: |
+          f=libs/hbb_common/src/config.rs
+          grep -q '"rs-ny.rustdesk.com"' "$f" || { echo "padrão rs-ny não encontrado em $f"; exit 1; }
+          grep -q 'OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=' "$f" || { echo "chave padrão não encontrada em $f"; exit 1; }
+          sed -i "s|\"rs-ny.rustdesk.com\"|\"${KFT_SERVER}\"|; s|OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=|${KFT_KEY}|" "$f"
+          if grep -q 'rs-ny.rustdesk.com\|OeVuKk5nlHiXp' "$f"; then echo "troca incompleta em $f"; exit 1; fi
+          grep -n "RENDEZVOUS_SERVERS\|RS_PUB_KEY" "$f"
+
+      - name: KFT - conferir configuração embutida
+        shell: bash
+        run: |
+          grep -q 'include_bytes!("../kft/custom.json")' src/common.rs || { echo "configuração KFT não embutida"; exit 1; }
+          if grep -q '5Qbwsde3unUcJBtrx9ZkvUmwFNoExHzpryHuPUdqlWM=' src/common.rs; then echo "checagem de assinatura da RustDesk ainda presente"; exit 1; fi
+          python3 -c "import json; d=json.load(open('kft/custom.json', encoding='utf-8')); o=d['override-settings']; assert d['app-name']=='KFT Suporte'; assert o['custom-rendezvous-server']=='${KFT_SERVER}'; assert o['key']=='${KFT_KEY}'; assert o['approve-mode']=='click'; print('custom.json ok')"
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bridge-artifact
+          path: ./
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2.0.9
+        with:
+          version: ${{ env.LLVM_VERSION }}
+
+      - name: Install flutter
+        uses: subosito/flutter-action@2783a3f08e1baf891508463f8c6653c258246225 # v2.12.0
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          architecture: x64
+
+      # https://github.com/flutter/flutter/issues/155685 (igual ao upstream).
+      # O zip vem de um release "main" mutável; registramos o SHA-256 no log e no artifact.
+      - name: Replace engine with rustdesk custom flutter engine
+        run: |
+          flutter doctor -v
+          flutter precache --windows
+          Invoke-WebRequest -Uri https://github.com/rustdesk/engine/releases/download/main/windows-x64-release.zip -OutFile windows-x64-release.zip
+          $h = (Get-FileHash windows-x64-release.zip -Algorithm SHA256).Hash
+          Write-Output "engine windows-x64-release.zip SHA256: $h"
+          New-Item -ItemType Directory -Force -Path kft-out | Out-Null
+          "engine windows-x64-release.zip SHA256: $h" | Out-File -Encoding ascii kft-out/build-info.txt
+          Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
+          mv -Force windows-x64-release/*  C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/
+
+      - name: Patch flutter
+        shell: bash
+        run: |
+          cp .github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff $(dirname $(dirname $(which flutter)))
+          cd $(dirname $(dirname $(which flutter)))
+          git apply flutter_3.24.4_dropdown_menu_enableFilter.diff
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: ${{ env.SCITER_RUST_VERSION }}
+          targets: x86_64-pc-windows-msvc
+          components: "rustfmt"
+
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          prefix-key: windows-2022
+
+      - name: Setup vcpkg with Github Actions binary cache
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
+        with:
+          vcpkgDirectory: C:\vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
+          doNotCache: false
+
+      - name: Install vcpkg dependencies
+        env:
+          VCPKG_DEFAULT_HOST_TRIPLET: x64-windows-static
+        shell: bash
+        run: |
+          if ! $VCPKG_ROOT/vcpkg install --triplet x64-windows-static --x-install-root="$VCPKG_ROOT/installed"; then
+            find "${VCPKG_ROOT}/" -name "*.log" | while read -r _1; do echo "$_1:"; cat "$_1"; done
+            exit 1
+          fi
+
+      - name: Build rustdesk
+        run: |
+          python3 .\build.py --portable --flutter --skip-portable-pack --hwcodec --vram
+          mv ./flutter/build/windows/x64/runner/Release ./rustdesk
+
+          Invoke-WebRequest -Uri https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip -OutFile usbmmidd_v2.zip
+          Expand-Archive usbmmidd_v2.zip -DestinationPath .
+          Remove-Item -Path usbmmidd_v2\Win32 -Recurse
+          Remove-Item -Path "usbmmidd_v2\deviceinstaller64.exe", "usbmmidd_v2\deviceinstaller.exe", "usbmmidd_v2\usbmmidd.bat"
+          mv -Force .\usbmmidd_v2 ./rustdesk
+
+          try {
+            Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/rustdesk_printer_driver_v4-1.4.zip -OutFile rustdesk_printer_driver_v4-1.4.zip
+            Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/printer_driver_adapter.zip -OutFile printer_driver_adapter.zip
+            Invoke-WebRequest -Uri https://github.com/rustdesk/hbb_common/releases/download/driver/sha256sums -OutFile sha256sums
+            $checksum_driver = (Select-String -Path .\sha256sums -Pattern '^([a-fA-F0-9]{64}) \*rustdesk_printer_driver_v4-1.4\.zip$').Matches.Groups[1].Value
+            $downloadsum_driver = Get-FileHash -Path rustdesk_printer_driver_v4-1.4.zip -Algorithm SHA256
+            $checksum_adapter = (Select-String -Path .\sha256sums -Pattern '^([a-fA-F0-9]{64}) \*printer_driver_adapter\.zip$').Matches.Groups[1].Value
+            $downloadsum_adapter = Get-FileHash -Path printer_driver_adapter.zip -Algorithm SHA256
+            if ($checksum_driver -eq $downloadsum_driver.Hash -and $checksum_adapter -eq $downloadsum_adapter.Hash) {
+                Expand-Archive rustdesk_printer_driver_v4-1.4.zip -DestinationPath .
+                mkdir ./rustdesk/drivers
+                mv -Force .\rustdesk_printer_driver_v4-1.4 ./rustdesk/drivers/RustDeskPrinterDriver
+                Expand-Archive printer_driver_adapter.zip -DestinationPath .
+                mv -Force .\printer_driver_adapter.dll ./rustdesk
+            } else {
+                Write-Output "printer driver: checksums do not match, ignored."
+            }
+          } catch {
+              Write-Host "Ignore the printer driver error."
+          }
+
+      - name: KFT - conferir que o servidor e o nome foram compilados
+        shell: bash
+        run: |
+          grep -a -q "KFT Suporte" rustdesk/librustdesk.dll || { echo "nome KFT ausente na librustdesk.dll"; exit 1; }
+          grep -a -q "${KFT_SERVER}" rustdesk/librustdesk.dll || { echo "servidor KFT ausente na librustdesk.dll"; exit 1; }
+          if grep -a -q "rs-ny.rustdesk.com" rustdesk/librustdesk.dll; then echo "servidor público da RustDesk ainda presente"; exit 1; fi
+          echo "librustdesk.dll ok"
+
+      - name: find Runner.res
+        continue-on-error: true
+        shell: bash
+        run: |
+          runner_res=$(find . -name "Runner.res");
+          if [ "$runner_res" != "" ]; then cp $runner_res ./libs/portable/Runner.res; fi
+
+      - name: Download RustDeskTempTopMostWindow artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: topmostwindow-artifacts-x64
+          path: "./rustdesk"
+
+      - name: Build self-extracted executable
+        shell: bash
+        run: |
+          sed -i '/dpiAware/d' res/manifest.xml
+          pushd ./libs/portable
+          pip3 install -r requirements.txt
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          popd
+          mkdir -p ./kft-out
+          mv ./target/release/rustdesk-portable-packer.exe "./kft-out/${KFT_EXE}"
+          cd kft-out
+          sha256sum "${KFT_EXE}" | tee "${KFT_EXE}.sha256"
+          echo "commit: ${GITHUB_SHA}" >> build-info.txt
+          echo "run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> build-info.txt
+
+      - name: Upload KFT Suporte
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: kft-suporte-windows-x64
+          path: ./kft-out
+          if-no-files-found: error

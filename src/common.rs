@@ -2492,26 +2492,12 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+// KFT Suporte: a configuração do cliente fica embutida no binário (kft/custom.json).
+// Nenhum custom.txt externo é lido, e não há verificação de assinatura da RustDesk.
+const KFT_CUSTOM_CLIENT: &[u8] = include_bytes!("../kft/custom.json");
+
 pub fn load_custom_client() {
-    #[cfg(debug_assertions)]
-    if let Ok(data) = std::fs::read_to_string("./custom.txt") {
-        read_custom_client(data.trim());
-        return;
-    }
-    let Some(path) = std::env::current_exe().map_or(None, |x| x.parent().map(|x| x.to_path_buf()))
-    else {
-        return;
-    };
-    #[cfg(target_os = "macos")]
-    let path = path.join("../Resources");
-    let path = path.join("custom.txt");
-    if path.is_file() {
-        let Ok(data) = std::fs::read_to_string(&path) else {
-            log::error!("Failed to read custom client config");
-            return;
-        };
-        read_custom_client(&data.trim());
-    }
+    apply_custom_client_json(KFT_CUSTOM_CLIENT);
 }
 
 fn read_custom_client_advanced_settings(
@@ -2590,22 +2576,14 @@ pub fn get_dst_align_rgba() -> usize {
     1
 }
 
-pub fn read_custom_client(config: &str) {
-    let Ok(data) = decode64(config) else {
-        log::error!("Failed to decode custom client config");
-        return;
-    };
-    const KEY: &str = "5Qbwsde3unUcJBtrx9ZkvUmwFNoExHzpryHuPUdqlWM=";
-    let Some(pk) = get_rs_pk(KEY) else {
-        log::error!("Failed to parse public key of custom client");
-        return;
-    };
-    let Ok(data) = sign::verify(&data, &pk) else {
-        log::error!("Failed to dec custom client config");
-        return;
-    };
+// KFT Suporte: qualquer configuração recebida de fora é ignorada; vale sempre a embutida.
+pub fn read_custom_client(_config: &str) {
+    apply_custom_client_json(KFT_CUSTOM_CLIENT);
+}
+
+fn apply_custom_client_json(data: &[u8]) {
     let Ok(mut data) =
-        serde_json::from_slice::<std::collections::HashMap<String, serde_json::Value>>(&data)
+        serde_json::from_slice::<std::collections::HashMap<String, serde_json::Value>>(data)
     else {
         log::error!("Failed to parse custom client config");
         return;
