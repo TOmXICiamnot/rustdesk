@@ -1,6 +1,5 @@
 use super::{validate_install_app_name, CursorData, ResultType};
 use crate::{
-    common::PORTABLE_APPNAME_RUNTIME_ENV_KEY,
     custom_server::*,
     ipc,
     privacy_mode::win_topmost_window::{self, WIN_TOPMOST_INJECTED_PROCESS_EXE},
@@ -2160,13 +2159,10 @@ pub fn prepare_custom_client_update() -> ResultType<bool> {
     Ok(true)
 }
 
+// KFT Suporte: servidor e chave vêm só da configuração embutida (kft/custom.json).
+// Renomear o exe (ex.: "...host=outro,key=...exe") ou definir RUSTDESK_APPNAME não muda nada.
 pub fn get_license_from_exe_name() -> ResultType<CustomServer> {
-    let mut exe = std::env::current_exe()?.to_str().unwrap_or("").to_owned();
-    // if defined portable appname entry, replace original executable name with it.
-    if let Ok(portable_exe) = std::env::var(PORTABLE_APPNAME_RUNTIME_ENV_KEY) {
-        exe = portable_exe;
-    }
-    get_custom_server_from_string(&exe)
+    bail!("KFT Suporte: exe-name server override disabled")
 }
 
 // We can't directly use `RegKey::set_value` to update the registry value, because it will fail with `ERROR_ACCESS_DENIED`

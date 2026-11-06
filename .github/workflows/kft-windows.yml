@@ -69,6 +69,7 @@ jobs:
         run: |
           grep -q 'include_bytes!("../kft/custom.json")' src/common.rs || { echo "configuração KFT não embutida"; exit 1; }
           if grep -q '5Qbwsde3unUcJBtrx9ZkvUmwFNoExHzpryHuPUdqlWM=' src/common.rs; then echo "checagem de assinatura da RustDesk ainda presente"; exit 1; fi
+          grep -q 'KFT Suporte: exe-name server override disabled' src/platform/windows.rs || { echo "troca de servidor pelo nome do exe ainda ativa"; exit 1; }
           python3 -c "import json; d=json.load(open('kft/custom.json', encoding='utf-8')); o=d['override-settings']; assert d['app-name']=='KFT Suporte'; assert o['custom-rendezvous-server']=='${KFT_SERVER}'; assert o['key']=='${KFT_KEY}'; assert o['approve-mode']=='click'; print('custom.json ok')"
 
       - name: Restore bridge files
