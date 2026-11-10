@@ -462,8 +462,8 @@ class _CmHeaderState extends State<_CmHeader>
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
           colors: [
-            Color(0xff00bfe1),
-            Color(0xff0071ff),
+            MyTheme.kftStone,
+            MyTheme.kftStoneDeep,
           ],
         ),
       ),
@@ -634,7 +634,7 @@ class _PrivilegeBoardState extends State<_PrivilegeBoard> {
         decoration: BoxDecoration(
           color: enabled
               ? (canModify ? MyTheme.accent : MyTheme.accent.withOpacity(0.6))
-              : Colors.grey[700],
+              : MyTheme.kftStone,
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: EdgeInsets.all(8.0),
@@ -649,7 +649,9 @@ class _PrivilegeBoardState extends State<_PrivilegeBoard> {
               Expanded(
                 child: Icon(
                   iconData,
-                  color: Colors.white,
+                  color: enabled
+                      ? MyTheme.kftOnyx
+                      : MyTheme.kftIvoryDim.withOpacity(0.45),
                 ),
               ),
             ],
@@ -884,7 +886,10 @@ class _CmControlPanel extends StatelessWidget {
     final model = Provider.of<ServerModel>(context);
     final showElevation = canElevate &&
         model.showElevation &&
-        client.type_() == ClientType.remote;
+        client.type_() == ClientType.remote &&
+        bind.mainGetBuildinOption(
+                key: kOptionHideElevateButtonInAcceptWindow) !=
+            'Y';
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -1038,15 +1043,15 @@ class _CmControlPanel extends StatelessWidget {
           children: [
             Expanded(
               child: buildButton(context,
-                  color: Colors.redAccent,
+                  color: MyTheme.kftCrimson,
                   onClick: handleDisconnect,
                   text: 'Disconnect',
                   icon: Icon(
                     Icons.link_off_rounded,
-                    color: Colors.white,
+                    color: MyTheme.kftPaper,
                     size: 14,
                   ),
-                  textColor: Colors.white),
+                  textColor: MyTheme.kftPaper),
             ),
           ],
         )
@@ -1063,7 +1068,7 @@ class _CmControlPanel extends StatelessWidget {
                 color: MyTheme.accent,
                 onClick: handleClose,
                 text: 'Close',
-                textColor: Colors.white)),
+                textColor: MyTheme.kftOnyx)),
       ],
     ).marginOnly(bottom: buttonBottomMargin);
   }
@@ -1112,7 +1117,7 @@ class _CmControlPanel extends StatelessWidget {
                         windowManager.minimize();
                       },
                       text: 'Accept',
-                      textColor: Colors.white,
+                      textColor: MyTheme.kftOnyx,
                     ),
                   ],
                 ),
@@ -1121,7 +1126,7 @@ class _CmControlPanel extends StatelessWidget {
               child: buildButton(
                 context,
                 color: Colors.transparent,
-                border: Border.all(color: Colors.grey),
+                border: Border.all(color: Color(0xFF4A443C)),
                 onClick: handleDisconnect,
                 text: 'Cancel',
                 textColor: null,
@@ -1159,7 +1164,7 @@ class _CmControlPanel extends StatelessWidget {
         ),
       );
     }
-    final borderRadius = BorderRadius.circular(10.0);
+    final borderRadius = BorderRadius.circular(100.0);
     final btn = Container(
       height: 28,
       decoration: BoxDecoration(

@@ -249,16 +249,26 @@ class MyTheme {
   MyTheme._();
 
   static const Color grayBg = Color(0xFFEFEFF2);
-  static const Color accent = Color(0xFF0071FF);
-  static const Color accent50 = Color(0x770071FF);
-  static const Color accent80 = Color(0xAA0071FF);
+  // KFT Suporte: paleta da KFT Tríade (guia em lucid/docs/identidade-visual.md).
+  static const Color kftOnyx = Color(0xFF0B0A08);
+  static const Color kftStone = Color(0xFF1F1B17);
+  static const Color kftStoneDeep = Color(0xFF14110E);
+  static const Color kftGold = Color(0xFFD9B27A);
+  static const Color kftGoldDeep = Color(0xFFA8783B);
+  static const Color kftCrimson = Color(0xFFB3262F);
+  static const Color kftIvory = Color(0xFFEDE6DA);
+  static const Color kftIvoryDim = Color(0xFFC9BFAF);
+  static const Color kftPaper = Color(0xFFFAF7F1);
+  static const Color accent = kftGold;
+  static const Color accent50 = Color(0x77D9B27A);
+  static const Color accent80 = Color(0xAAD9B27A);
   static const Color canvasColor = Color(0xFF212121);
   static const Color border = Color(0xFFCCCCCC);
   static const Color idColor = Color(0xFF00B6F0);
   static const Color darkGray = Color.fromARGB(255, 148, 148, 148);
   static const Color cmIdColor = Color(0xFF21790B);
   static const Color dark = Colors.black87;
-  static const Color button = Color(0xFF2C8CFF);
+  static const Color button = kftGold;
   static const Color hoverBorder = Color(0xFF999999);
 
   // ListTile
@@ -471,9 +481,10 @@ class MyTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
-    hoverColor: Color.fromARGB(255, 45, 46, 53),
-    scaffoldBackgroundColor: Color(0xFF18191E),
-    dialogBackgroundColor: Color(0xFF18191E),
+    fontFamily: 'Geist',
+    hoverColor: kftStone,
+    scaffoldBackgroundColor: kftOnyx,
+    dialogBackgroundColor: kftOnyx,
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
     ),
@@ -483,14 +494,14 @@ class MyTheme {
         borderRadius: BorderRadius.circular(18.0),
         side: BorderSide(
           width: 1,
-          color: Color(0xFF24252B),
+          color: kftStone,
         ),
       ),
     ),
     scrollbarTheme: scrollbarThemeDark,
     inputDecorationTheme: (isDesktop || isWebDesktop)
         ? InputDecorationTheme(
-            fillColor: Color(0xFF24252B),
+            fillColor: kftStone,
             filled: true,
             isDense: true,
             border: OutlineInputBorder(
@@ -509,7 +520,7 @@ class MyTheme {
         color: accent80,
       ),
     ),
-    cardColor: Color(0xFF24252B),
+    cardColor: kftStone,
     visualDensity: VisualDensity.adaptivePlatformDensity,
     tabBarTheme: const TabBarTheme(
       labelColor: Colors.white70,
@@ -532,19 +543,17 @@ class MyTheme {
         : mobileTextButtonTheme,
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MyTheme.accent,
-        foregroundColor: Colors.white,
+        backgroundColor: kftGold,
+        foregroundColor: kftOnyx,
         disabledForegroundColor: Colors.white70,
         disabledBackgroundColor: Colors.white10,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
+        shape: const StadiumBorder(),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: Color(0xFF24252B),
-        side: BorderSide(color: Colors.white12, width: 0.5),
+        backgroundColor: kftStone,
+        side: BorderSide(color: kftGoldDeep, width: 0.5),
         disabledForegroundColor: Colors.white70,
         foregroundColor: Colors.white70,
         shape: RoundedRectangleBorder(
@@ -558,11 +567,13 @@ class MyTheme {
     listTileTheme: listTileTheme,
     menuBarTheme: MenuBarThemeData(
         style: MenuStyle(
-            backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
+            backgroundColor: MaterialStatePropertyAll(kftOnyx))),
     colorScheme: ColorScheme.dark(
-      primary: Colors.blue,
+      primary: kftGold,
+      onPrimary: kftOnyx,
       secondary: accent,
-      background: Color(0xFF24252B),
+      background: kftOnyx,
+      surface: kftStoneDeep,
     ),
     popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(

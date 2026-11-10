@@ -177,6 +177,15 @@ flutter:
     - family: More
       fonts:
         - asset: assets/more.ttf
+    # KFT Suporte: fontes da marca KFT Tríade (SIL OFL 1.1, licenças em assets/fonts/)
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Variable.ttf
+    - family: InstrumentSerif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Regular.ttf
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          style: italic
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

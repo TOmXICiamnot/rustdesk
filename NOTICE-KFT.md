@@ -10,12 +10,14 @@ Este repositório é um fork do [RustDesk](https://github.com/rustdesk/rustdesk)
 
 | Arquivo | Mudança |
 |---|---|
-| `kft/custom.json` (novo) | Configuração do cliente: nome "KFT Suporte", só recebe conexões, sem instalação, servidor e chave próprios, aceite por clique, só senha temporária, configurações de servidor, rede e segurança ocultas. |
+| `kft/custom.json` (novo) | Configuração do cliente: nome "KFT Suporte", só recebe conexões, sem instalação, servidor e chave próprios, aceite por clique, só senha temporária, tema escuro fixo, gravação e modo privacidade desligados por padrão, configurações de servidor, rede e segurança ocultas. |
 | `src/common.rs` | `load_custom_client()` e `read_custom_client()` passam a aplicar **somente** a configuração embutida (`include_bytes!`). Foram removidas a leitura de `custom.txt` externo e a verificação de assinatura da RustDesk. |
 | `src/platform/windows.rs` | `get_license_from_exe_name()` desativada: renomear o exe (`...host=...,key=...`) ou definir `RUSTDESK_APPNAME` não troca o servidor nem a chave. |
 | `.github/workflows/kft-windows.yml` (novo) | Build manual Windows x64 portátil. No submódulo `hbb_common`, troca o servidor público padrão (`rs-ny.rustdesk.com`) e a chave padrão pelo servidor KFT. Inclui verificações que falham o build. |
 | `Cargo.toml`, `libs/portable/Cargo.toml`, `flutter/windows/runner/Runner.rc` | Nome do produto, descrição e copyright (mantém o da Purslane e acrescenta as modificações da KFT). |
-| `res/*.png`, `res/*.ico`, `flutter/windows/runner/resources/app_icon.ico`, `flutter/assets/icon.png`, `flutter/assets/logo.png`, `flutter/assets/logo_dark.png` | Ícones e logo da KFT (provisórios na primeira versão). |
+| `res/*.png`, `res/*.ico`, `flutter/windows/runner/resources/app_icon.ico`, `flutter/assets/icon.png`, `flutter/assets/logo.png`, `flutter/assets/logo_dark.png` | Ícones gerados do emblema oficial da KFT Tríade. |
+| `flutter/lib/common.dart`, `flutter/lib/desktop/pages/desktop_home_page.dart`, `flutter/lib/desktop/pages/server_page.dart`, `flutter/lib/desktop/pages/connection_page.dart` | Interface com a marca KFT: tema escuro (ônix, dourado, carmim), cabeçalho "KFT Suporte", ID num card de cantos cortados, senha oculta (aceite só por clique), botões em pílula, Desconectar em carmim, botão Elevar oculto. |
+| `flutter/assets/fonts/` (novo), `flutter/pubspec.yaml` | Fontes Geist e Instrument Serif, ambas sob a SIL Open Font License 1.1 (textos das licenças na mesma pasta). |
 
 O nome e o logo "RustDesk" pertencem aos seus titulares. O KFT Suporte não é um produto da RustDesk nem da Purslane Tech. A menção "Powered by RustDesk" no app é atribuição.
 

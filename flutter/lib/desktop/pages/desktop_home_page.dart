@@ -85,13 +85,18 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           alignment: Alignment.center,
           child: loadPowered(context),
         ),
-      Align(
-        alignment: Alignment.center,
-        child: loadLogo(),
-      ),
+      if (isIncomingOnly)
+        buildKftHeader(context)
+      else
+        Align(
+          alignment: Alignment.center,
+          child: loadLogo(),
+        ),
       buildTip(context),
-      if (!isOutgoingOnly) buildIDBoard(context),
-      if (!isOutgoingOnly) buildPasswordBoard(context),
+      if (isIncomingOnly) buildKftIDBoard(context),
+      if (!isOutgoingOnly && !isIncomingOnly) buildIDBoard(context),
+      // KFT Suporte: aceite só por clique, então não há senha para mostrar.
+      if (!isOutgoingOnly && !isIncomingOnly) buildPasswordBoard(context),
       FutureBuilder<Widget>(
         future: Future.value(
             Obx(() => buildHelpCards(stateGlobal.updateUrl.value))),
@@ -386,8 +391,124 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     );
   }
 
+  // KFT Suporte: cabeçalho da marca KFT Tríade (emblema + "KFT Suporte", com a palavra em serifa).
+  Widget buildKftHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, right: 16, top: 14),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset('assets/icon.png', width: 46, height: 46),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(
+                      fontFamily: 'Geist',
+                      fontSize: 21,
+                      letterSpacing: -0.84,
+                      color: MyTheme.kftIvory),
+                  children: [
+                    TextSpan(text: 'KFT '),
+                    TextSpan(
+                      text: 'Suporte',
+                      style: TextStyle(
+                          fontFamily: 'InstrumentSerif',
+                          fontStyle: FontStyle.italic,
+                          fontSize: 25.6,
+                          letterSpacing: -0.5,
+                          color: MyTheme.kftGold),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                'TRÍADE',
+                style: TextStyle(
+                    fontFamily: 'Geist',
+                    fontSize: 10,
+                    letterSpacing: 4.2,
+                    color: MyTheme.kftIvoryDim),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // KFT Suporte: ID num card de cantos cortados, número em Instrument Serif dourado.
+  Widget buildKftIDBoard(BuildContext context) {
+    final model = gFFI.serverModel;
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, right: 16, top: 6, bottom: 6),
+      child: ClipPath(
+        clipper: const KftCutCornerClipper(cut: 18),
+        child: Container(
+          color: MyTheme.kftStone,
+          padding: const EdgeInsets.fromLTRB(16, 10, 10, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'SEU ID',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 1.3,
+                        color: MyTheme.kftIvoryDim),
+                  ),
+                  buildPopupMenu(context),
+                ],
+              ),
+              GestureDetector(
+                onDoubleTap: () {
+                  Clipboard.setData(ClipboardData(text: model.serverId.text));
+                  showToast(translate("Copied"));
+                },
+                child: AnimatedBuilder(
+                  animation: model.serverId,
+                  builder: (context, _) => Text(
+                    model.serverId.text,
+                    style: const TextStyle(
+                        fontFamily: 'InstrumentSerif',
+                        fontSize: 32,
+                        letterSpacing: 0.6,
+                        color: MyTheme.kftGold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   buildTip(BuildContext context) {
     final isOutgoingOnly = bind.isOutgoingOnly();
+    if (bind.isIncomingOnly()) {
+      return const Padding(
+        padding: EdgeInsets.only(left: 20.0, right: 16, top: 16.0, bottom: 8),
+        child: Text(
+          'Informe este número ao técnico da KFT. Ninguém acessa este '
+          'computador sem o seu clique em Aceitar.',
+          style: TextStyle(
+              fontSize: 13,
+              height: 1.45,
+              letterSpacing: -0.39,
+              color: MyTheme.kftIvoryDim),
+        ),
+      );
+    }
     return Padding(
       padding:
           const EdgeInsets.only(left: 20.0, right: 16, top: 16.0, bottom: 5),
@@ -1123,4 +1244,27 @@ void setPasswordDialog({VoidCallback? notEmptyCallback}) async {
       onCancel: close,
     );
   });
+}
+
+// KFT Suporte: a forma da marca, com os cantos do alto à direita e de baixo à esquerda cortados.
+class KftCutCornerClipper extends CustomClipper<Path> {
+  final double cut;
+  const KftCutCornerClipper({this.cut = 18});
+
+  @override
+  Path getClip(Size size) {
+    final c = cut > size.height / 2 ? size.height / 2 : cut;
+    return Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width - c, 0)
+      ..lineTo(size.width, c)
+      ..lineTo(size.width, size.height)
+      ..lineTo(c, size.height)
+      ..lineTo(0, size.height - c)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant KftCutCornerClipper oldClipper) =>
+      oldClipper.cut != cut;
 }

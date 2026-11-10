@@ -27,6 +27,7 @@ windows = { version = "0.61", features = [
 native-windows-gui = {version = "1.0", default-features = false, features = ["animation-timer", "image-decoder"]}
 
 [package.metadata.winres]
+CompanyName = "KFT Triade"
 LegalCopyright = "Copyright © 2026 Purslane Tech Pte. Ltd. Modificações © 2026 KFT Triade (AGPL-3.0)."
 ProductName = "KFT Suporte"
 OriginalFilename = "KFT-Suporte.exe"

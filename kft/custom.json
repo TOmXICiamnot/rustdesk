@@ -1,23 +1,27 @@
 {
-  "app-name": "KFT Suporte",
-  "conn-type": "incoming",
-  "disable-installation": "Y",
-  "disable-settings": "Y",
-  "disable-account": "Y",
-  "override-settings": {
-    "custom-rendezvous-server": "181.189.9.61",
-    "relay-server": "181.189.9.61",
-    "key": "hyv2IFXrtmCIS1reUglt9KEcVZhPXVGj0V2EMCCQYOM=",
-    "approve-mode": "click",
-    "verification-method": "use-temporary-password",
-    "allow-auto-disconnect": "N",
-    "direct-server": "N",
-    "allow-remote-config-modification": "N",
-    "hide-server-settings": "Y",
-    "hide-network-settings": "Y",
-    "hide-proxy-settings": "Y",
-    "hide-security-settings": "Y",
-    "disable-change-permanent-password": "Y",
-    "disable-change-id": "Y"
-  }
+ "app-name": "KFT Suporte",
+ "conn-type": "incoming",
+ "disable-installation": "Y",
+ "disable-settings": "Y",
+ "disable-account": "Y",
+ "override-settings": {
+  "custom-rendezvous-server": "181.189.9.61",
+  "relay-server": "181.189.9.61",
+  "key": "hyv2IFXrtmCIS1reUglt9KEcVZhPXVGj0V2EMCCQYOM=",
+  "approve-mode": "click",
+  "verification-method": "use-temporary-password",
+  "allow-auto-disconnect": "N",
+  "direct-server": "N",
+  "allow-remote-config-modification": "N",
+  "hide-server-settings": "Y",
+  "hide-network-settings": "Y",
+  "hide-proxy-settings": "Y",
+  "hide-security-settings": "Y",
+  "disable-change-permanent-password": "Y",
+  "disable-change-id": "Y",
+  "theme": "dark",
+  "enable-record-session": "N",
+  "enable-privacy-mode": "N",
+  "hide-elevate-button-in-accept-window": "Y"
+ }
 }
